@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Acme Cloud Hosting
+Vendor Email: {{email:acme}}
+Invoice #: AC-9003
+Due: 2026-11-22
+Currency: USD
+Item: Dedicated cluster setup | 2400.00
+Total: 2,400.00

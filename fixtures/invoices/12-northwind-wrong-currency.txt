@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Northwind Design Studio
+Vendor Email: {{email:northwind}}
+Invoice #: NW-2211
+Due: 2026-11-26
+Currency: EUR
+Item: Brand guidelines | 400.00
+Total: 400.00

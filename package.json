@@ -1,0 +1,39 @@
+{
+  "name": "agentpurse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spend authority for AI agents: a policy-enforced payments control plane on PayPal Payouts.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "worker": "tsx scripts/worker.ts",
+    "mcp": "tsx scripts/mcp-stdio.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "paypal:check": "tsx scripts/paypal-check.ts",
+    "ai:check": "tsx scripts/ai-check.ts"
+  },
+  "dependencies": {
+    "ag-grid-community": "32.3.3",
+    "ag-grid-react": "32.3.3",
+    "next": "15.1.6",
+    "pg": "^8.13.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2"
+  }
+}

@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Acme Cloud Hosting
+Vendor Email: {{email:acme}}
+Invoice #: AC-9002
+Due: 2026-11-22
+Currency: USD
+Item: Annual backup add-on | 1200.00
+Total: 1,200.00

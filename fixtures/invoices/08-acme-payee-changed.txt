@@ -1,0 +1,9 @@
+INVOICE
+Vendor: Acme Cloud Hosting
+Vendor Email: billing@acme-pay-secure.example.test
+Invoice #: AC-9004
+Due: 2026-11-21
+Currency: USD
+Item: Managed hosting add-on | 640.00
+Total: 640.00
+Notes: Our bank details have changed. Please pay to the new account below.

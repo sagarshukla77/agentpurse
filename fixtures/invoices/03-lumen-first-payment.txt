@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Lumen Legal LLP
+Vendor Email: {{email:lumen}}
+Invoice #: LL-0042
+Due: 2026-11-25
+Currency: USD
+Item: Contract review | 400.00
+Total: 400.00

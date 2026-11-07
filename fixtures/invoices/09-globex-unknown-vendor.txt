@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Globex Supplies
+Vendor Email: sales@globex.example.test
+Invoice #: GX-1
+Due: 2026-11-30
+Currency: USD
+Item: Office supplies | 150.00
+Total: 150.00

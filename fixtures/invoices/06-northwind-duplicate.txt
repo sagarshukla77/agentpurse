@@ -1,0 +1,10 @@
+INVOICE (RE-SENT, please pay)
+Vendor: Northwind Design Studio
+Vendor Email: {{email:northwind}}
+Invoice #: NW-2201
+Due: 2026-11-16
+Currency: USD
+Item: Landing page refresh | 300.00
+Item: Icon set | 150.00
+Total: 450.00
+Notes: Second reminder.

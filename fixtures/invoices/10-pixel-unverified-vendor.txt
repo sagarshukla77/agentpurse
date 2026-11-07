@@ -1,0 +1,8 @@
+INVOICE
+Vendor: Pixel Freelance Collective
+Vendor Email: {{email:pixel}}
+Invoice #: PX-77
+Due: 2026-11-30
+Currency: USD
+Item: Illustration work | 500.00
+Total: 500.00
