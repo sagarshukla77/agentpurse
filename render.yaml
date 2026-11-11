@@ -44,3 +44,4 @@ services:
       - { key: MODEL_FAST, value: "gemini-flash-lite-latest" }
       - { key: MODEL_FALLBACK, value: "gemini-flash-lite-latest" }
       - { key: AI_MAX_RPM, value: "5" }
+      - { key: AI_FALLBACK_MOCK, value: "true" }      # hosted demo only: if the free AI tier is overloaded for a judge, demo-format invoices still work (labelled as offline-parser)

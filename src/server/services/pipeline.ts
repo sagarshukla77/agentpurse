@@ -45,13 +45,15 @@ export async function ingestInvoice(req: IngestRequest): Promise<IngestResult> {
   // ---- 1. Extraction (AI, untrusted output) ----
   let extracted: ExtractedInvoice | null = null;
   let llmInjection: InjectionResult = { flagged: false, evidence: [] };
+  let parser: 'ai' | 'offline' = 'ai';
+  let fallbackReason: string | undefined;
   let extractionError = '';
   try {
     if (s) {
       extracted = { vendorName: s.vendorName, vendorEmail: null, invoiceNumber: s.reference, amountCents: s.amountCents, currency: s.currency, dueDate: null, lineItems: [], confidence: 1 };
     } else {
       const r = await extractInvoice({ text: req.text, file: req.file });
-      extracted = r.invoice; llmInjection = r.injection;
+      extracted = r.invoice; llmInjection = r.injection; parser = r.parser; fallbackReason = r.fallbackReason;
     }
   } catch (e) { extractionError = e instanceof Error ? e.message : 'extraction failed'; }
 
@@ -97,7 +99,7 @@ export async function ingestInvoice(req: IngestRequest): Promise<IngestResult> {
 
     const actor = { actorKind: req.actor.kind, actorId: req.actor.id } as const;
     await audit(db, { ...actor, action: 'INVOICE_RECEIVED', subjectType: 'invoice', subjectId: invoiceId, detail: { source: req.source, by: req.actor.label } });
-    await audit(db, { actorKind: 'ai', action: 'INVOICE_EXTRACTED', subjectType: 'invoice', subjectId: invoiceId, detail: { confidence: extracted!.confidence, vendorMatched: !!vendor, amountCents: extracted!.amountCents, currency: extracted!.currency } });
+    await audit(db, { actorKind: 'ai', action: 'INVOICE_EXTRACTED', subjectType: 'invoice', subjectId: invoiceId, detail: { confidence: extracted!.confidence, vendorMatched: !!vendor, amountCents: extracted!.amountCents, currency: extracted!.currency, parser, ...(fallbackReason ? { fallbackReason } : {}) } });
     await audit(db, { actorKind: 'system', action: 'RISK_ASSESSED', subjectType: 'invoice', subjectId: invoiceId, detail: { flags: proposal.riskFlags, injectionEvidence: injection.evidence } });
     await audit(db, { actorKind: 'system', action: 'POLICY_DECIDED', subjectType: 'invoice', subjectId: invoiceId, detail: { verdict: decision.verdict, reasons: decision.reasons.map((r) => r.code), policyVersion: decision.policyVersion } });
 

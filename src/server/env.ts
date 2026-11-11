@@ -37,8 +37,12 @@ function load() {
       maxRpm: num('AI_MAX_RPM', process.env.AI_MODE === 'gemini' ? 5 : 50),
       /** Plain-English explanations come from a template unless this is true (saves one AI call per invoice). */
       llmExplain: process.env.AI_EXPLAIN === 'true',
+      /** DEMO ONLY: if the AI is unreachable, read demo-format text with the offline parser (clearly labelled). */
+      fallbackMock: process.env.AI_FALLBACK_MOCK === 'true' && process.env.DEMO_MODE === 'true',
       extractModel: process.env.MODEL_EXTRACT ?? '',
       fastModel: process.env.MODEL_FAST ?? '',
+      /** Tried in order when the main model is overloaded or out of quota (limits are per model on free tiers). */
+      fallbackModels: (process.env.MODEL_FALLBACK ?? '').split(',').map((m) => m.trim()).filter(Boolean),
       maxCallsPerDay: num('AI_MAX_CALLS_PER_DAY', 300),
     },
     holdSeconds: num('PAYMENT_HOLD_SECONDS', 900),      // cancel window before money leaves

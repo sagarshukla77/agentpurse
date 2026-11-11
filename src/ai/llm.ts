@@ -27,14 +27,28 @@ export function parseJsonReply(text: string): unknown {
   return JSON.parse(text.slice(start, end + 1));
 }
 
+const log = (m: string) => { if (process.env.AI_VERBOSE === 'true') console.log(`  [ai] ${m}`); };
+
+function explainFailure(e: unknown): Error {
+  if (e instanceof GeminiRetryable) {
+    if (e.dailyLimit) return new Error('The free Gemini daily quota is used up for the model(s) tried. Try again tomorrow, or add another model to MODEL_FALLBACK');
+    if (e.status === 503) return new Error('Gemini is overloaded right now (HTTP 503: "high demand"). This is on Google\'s side and usually passes in minutes. Try again shortly, or add a second model to MODEL_FALLBACK');
+    return new Error(`Gemini is rate-limiting requests (HTTP ${e.status}): ${e.message}`);
+  }
+  if (e instanceof ClaudeRetryable) return new Error('Claude is busy right now. Try again shortly');
+  return e instanceof Error ? e : new Error('AI request failed');
+}
+
 /**
  * The only way the app talks to an AI model. Whichever provider is configured (Claude or the free Gemini
- * tier), the same rules apply: a daily call cap, throttling, bounded retries, and no tools. Output is untrusted.
+ * tier), the same rules apply: a daily call cap, throttling, bounded retries, optional fallback models,
+ * and no tools. Model output is untrusted.
  */
 export async function callModel(opts: { tier: 'extract' | 'fast'; system: string; parts: Part[]; maxTokens?: number; skipBudget?: boolean }): Promise<string> {
-  const { mode, extractModel, fastModel, maxCallsPerDay } = env().ai;
+  const { mode, extractModel, fastModel, maxCallsPerDay, fallbackModels } = env().ai;
   if (mode === 'mock') throw new Error('AI_MODE is "mock": no model is configured');
-  const model = opts.tier === 'extract' ? extractModel : fastModel;
+  const primary = opts.tier === 'extract' ? extractModel : fastModel;
+  const models = [primary, ...fallbackModels.filter((m) => m !== primary)];
   const maxTokens = opts.maxTokens ?? 4096; // generous: some Gemini models spend output tokens "thinking"
 
   if (!opts.skipBudget) {
@@ -42,18 +56,23 @@ export async function callModel(opts: { tier: 'extract' | 'fast'; system: string
     if (calls > maxCallsPerDay) throw new AiBudgetExceeded('Daily AI call limit reached');
   }
 
-  for (let attempt = 0; ; attempt++) {
-    await throttle();
-    try {
-      return mode === 'gemini' ? await geminiRequest(model, opts.system, opts.parts, maxTokens) : await claudeRequest(model, opts.system, opts.parts, maxTokens);
-    } catch (e) {
-      const retryable = e instanceof GeminiRetryable || e instanceof ClaudeRetryable;
-      if (!retryable || attempt >= 3) {
-        if (e instanceof GeminiRetryable) throw new Error(e.dailyLimit ? 'The free Gemini daily quota is used up. Try again tomorrow, or switch model' : `Gemini is rate-limiting requests: ${e.message}`);
-        throw e;
+  let lastRetryable: unknown = null;
+  for (const model of models) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await throttle();
+      try {
+        log(`calling ${model}${attempt ? ` (retry ${attempt})` : ''}`);
+        return mode === 'gemini' ? await geminiRequest(model, opts.system, opts.parts, maxTokens) : await claudeRequest(model, opts.system, opts.parts, maxTokens);
+      } catch (e) {
+        if (!(e instanceof GeminiRetryable || e instanceof ClaudeRetryable)) throw e;
+        lastRetryable = e;
+        if (e instanceof GeminiRetryable && e.dailyLimit) { log(`${model}: daily quota used up, trying the next model`); break; }
+        if (attempt === 3) { log(`${model}: still busy after 4 tries, trying the next model`); break; }
+        const wait = Math.min(45_000, e.retryAfterMs ?? 5000 * 2 ** attempt);
+        log(`${model} is busy (${e instanceof GeminiRetryable ? e.status : 'busy'}); waiting ${Math.round(wait / 1000)}s`);
+        await sleep(wait);
       }
-      if (e instanceof GeminiRetryable && e.dailyLimit) throw new Error('The free Gemini daily quota is used up. Try again tomorrow, or switch model');
-      await sleep(Math.min(60_000, e.retryAfterMs ?? 4000 * 2 ** attempt));
     }
   }
+  throw explainFailure(lastRetryable);
 }

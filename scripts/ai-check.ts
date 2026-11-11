@@ -1,4 +1,5 @@
 import './_env';
+process.env.AI_VERBOSE = 'true'; // show retries so a slow answer does not look like a hang
 import { extractInvoice } from '../src/ai/extract';
 import { env } from '../src/server/env';
 
@@ -17,12 +18,14 @@ async function main() {
   console.log(`AI_MODE        : ${a.mode}`);
   console.log(`API key        : ${(a.mode === 'gemini' ? a.geminiKey : a.apiKey) ? 'set' : 'MISSING'}`);
   console.log(`MODEL_EXTRACT  : ${a.extractModel || '(not set)'}`);
+  console.log(`Fallback models: ${a.fallbackModels.join(', ') || '(none)'}`);
   console.log(`Max per minute : ${a.maxRpm}`);
   if (a.mode === 'mock') { console.log('\nAI_MODE is mock. Set AI_MODE=gemini (free) or anthropic in .env first.'); process.exit(1); }
   console.log('\nSending a messy sample invoice (with a hidden instruction) to the model…');
   const t = Date.now();
   const r = await extractInvoice({ text: SAMPLE }, { skipBudget: true });
   const i = r.invoice;
+  if (r.parser === 'offline') { console.log(`\nThe AI was NOT used (${r.fallbackReason ?? 'unavailable'}); the offline fallback answered instead.`); process.exit(1); }
   console.log(`\nSUCCESS in ${((Date.now() - t) / 1000).toFixed(1)}s`);
   console.log(`Vendor      : ${i.vendorName}`);
   console.log(`Invoice #   : ${i.invoiceNumber}`);

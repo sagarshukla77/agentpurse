@@ -28,7 +28,7 @@ export function Timeline({ events }: { events: AuditEvent[] }) {
 function describe(e: AuditEvent): string {
   const d = e.detail as Record<string, any>;
   switch (e.action) {
-    case 'INVOICE_EXTRACTED': return `Confidence ${Math.round((d.confidence ?? 0) * 100)}% · vendor ${d.vendorMatched ? 'found in registry' : 'not in registry'}`;
+    case 'INVOICE_EXTRACTED': return `${d.parser === 'offline' ? 'Read by the offline parser (the AI was unavailable) · ' : ''}Confidence ${Math.round((d.confidence ?? 0) * 100)}% · vendor ${d.vendorMatched ? 'found in registry' : 'not in registry'}`;
     case 'RISK_ASSESSED': return (d.flags as string[])?.length ? `Flags: ${(d.flags as string[]).join(', ').toLowerCase().replace(/_/g, ' ')}` : 'No risk flags';
     case 'POLICY_DECIDED': return `${d.verdict}${(d.reasons as string[])?.length ? ': ' + (d.reasons as string[]).join(', ').toLowerCase().replace(/_/g, ' ') : ''}`;
     case 'PAYMENT_QUEUED': return d.releaseAt ? `Releases at ${dateTime(d.releaseAt)}` : '';

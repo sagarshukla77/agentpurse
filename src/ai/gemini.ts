@@ -3,7 +3,7 @@ import { buildGeminiBody, parseGeminiError, parseGeminiReply, type GeminiError, 
 
 /** Thrown for rate-limit / overload responses so the caller can wait and retry. */
 export class GeminiRetryable extends Error {
-  constructor(message: string, public retryAfterMs: number | null, public dailyLimit: boolean) { super(message); }
+  constructor(message: string, public retryAfterMs: number | null, public dailyLimit: boolean, public status = 429) { super(message); }
 }
 
 export async function geminiRequest(model: string, system: string, parts: Part[], maxTokens: number): Promise<string> {
@@ -19,7 +19,7 @@ export async function geminiRequest(model: string, system: string, parts: Part[]
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const err: GeminiError = parseGeminiError(body);
-    if (res.status === 429 || res.status === 503) throw new GeminiRetryable(err.message, err.retryAfterMs, err.dailyLimit);
+    if (res.status === 429 || res.status === 503) throw new GeminiRetryable(err.message, err.retryAfterMs, err.dailyLimit, res.status);
     throw new Error(`Gemini API error ${res.status}: ${err.message}`);
   }
   return parseGeminiReply(body);
