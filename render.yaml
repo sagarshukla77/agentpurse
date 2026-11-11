@@ -1,9 +1,9 @@
-# Render Blueprint: one web service (payment worker runs inside it) + Postgres.
-# Plan names follow Render's current docs. The paid plans are covered by the hackathon's $50 Render credits,
-# and avoid the free tier's sleep-after-15-minutes and expiring database.
+
+# AgentPurse - Free Render deployment
+
 databases:
   - name: agentpurse-db
-    plan: basic-256mb
+    plan: free
     databaseName: agentpurse
     user: agentpurse
 
@@ -11,37 +11,94 @@ services:
   - type: web
     name: agentpurse
     runtime: node
-    plan: starter
-    # --include=dev: the build needs TypeScript and the @types packages, which live in devDependencies
+    plan: free
+
     buildCommand: npm ci --include=dev && npm run build
-    preDeployCommand: npm run db:migrate
-    startCommand: npm run db:seed && npm start
+
+    # Run migrations and seed the database before starting Next.js.
+    startCommand: npm run db:migrate && npm run db:seed && npm start
+
     healthCheckPath: /api/health
     autoDeployTrigger: commit
+
     envVars:
-      - { key: DATABASE_URL, fromDatabase: { name: agentpurse-db, property: connectionString } }
-      - { key: SESSION_SECRET, generateValue: true }
-      - { key: APPROVAL_SECRET, generateValue: true }
-      - { key: ENCRYPTION_KEY, sync: false }          # you will be asked: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-      - { key: INLINE_WORKER, value: "true" }
-      - { key: DEMO_MODE, value: "true" }             # judge-friendly: skips authenticator codes. Never for real use.
-      - { key: NEXT_PUBLIC_DEMO_MODE, value: "true" }
-      - { key: NEXT_PUBLIC_DEMO_PASSWORD, value: "demo-password-change-me" }
-      - { key: DEMO_PASSWORD, value: "demo-password-change-me" }
-      - { key: PAYMENT_HOLD_SECONDS, value: "20" }
-      - { key: PAYPAL_MODE, value: "live" }           # "live" here still means the PayPal SANDBOX; the app refuses real PayPal URLs
-      - { key: PAYPAL_BASE_URL, value: "https://api-m.sandbox.paypal.com" }
-      - { key: PAYPAL_CLIENT_ID, sync: false }
-      - { key: PAYPAL_CLIENT_SECRET, sync: false }
-      - { key: PAYPAL_WEBHOOK_ID, sync: false }       # leave blank on the first deploy; add after you create the webhook
-      - { key: DEMO_VENDOR_EMAIL_NORTHWIND, sync: false }  # your sandbox PERSONAL account emails (read when seeding)
-      - { key: DEMO_VENDOR_EMAIL_ACME, sync: false }
-      - { key: DEMO_VENDOR_EMAIL_LUMEN, sync: false }
-      - { key: DEMO_VENDOR_EMAIL_PIXEL, sync: false }
-      - { key: AI_MODE, value: "gemini" }
-      - { key: GEMINI_API_KEY, sync: false }
-      - { key: MODEL_EXTRACT, value: "gemini-flash-latest" }
-      - { key: MODEL_FAST, value: "gemini-flash-lite-latest" }
-      - { key: MODEL_FALLBACK, value: "gemini-flash-lite-latest" }
-      - { key: AI_MAX_RPM, value: "5" }
-      - { key: AI_FALLBACK_MOCK, value: "true" }      # hosted demo only: if the free AI tier is overloaded for a judge, demo-format invoices still work (labelled as offline-parser)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agentpurse-db
+          property: connectionString
+
+      - key: SESSION_SECRET
+        generateValue: true
+
+      - key: APPROVAL_SECRET
+        generateValue: true
+
+      - key: ENCRYPTION_KEY
+        sync: false
+
+      - key: INLINE_WORKER
+        value: "true"
+
+      - key: DEMO_MODE
+        value: "true"
+
+      - key: NEXT_PUBLIC_DEMO_MODE
+        value: "true"
+
+      - key: NEXT_PUBLIC_DEMO_PASSWORD
+        sync: false
+
+      - key: DEMO_PASSWORD
+        sync: false
+
+      - key: PAYMENT_HOLD_SECONDS
+        value: "20"
+
+      # PayPal Sandbox only. Never use real-money credentials.
+      - key: PAYPAL_MODE
+        value: "live"
+
+      - key: PAYPAL_BASE_URL
+        value: "https://api-m.sandbox.paypal.com"
+
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+
+      - key: DEMO_VENDOR_EMAIL_NORTHWIND
+        sync: false
+
+      - key: DEMO_VENDOR_EMAIL_ACME
+        sync: false
+
+      - key: DEMO_VENDOR_EMAIL_LUMEN
+        sync: false
+
+      - key: DEMO_VENDOR_EMAIL_PIXEL
+        sync: false
+
+      - key: AI_MODE
+        value: "gemini"
+
+      - key: GEMINI_API_KEY
+        sync: false
+
+      - key: MODEL_EXTRACT
+        value: "gemini-flash-latest"
+
+      - key: MODEL_FAST
+        value: "gemini-flash-lite-latest"
+
+      - key: MODEL_FALLBACK
+        value: "gemini-flash-lite-latest"
+
+      - key: AI_MAX_RPM
+        value: "5"
+
+      - key: AI_FALLBACK_MOCK
+        value: "true"
